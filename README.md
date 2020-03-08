@@ -7,4 +7,4 @@
 ### So that I can create efficient and balanced teams
 
 ## Demo:
-[Application Demo](https://github.com/cndbrtn/Homework09-PDF-Generator/blob/master/pdf-gen-demo.gif?raw=true)
+![Application Demo](https://github.com/cndbrtn/Homework09-PDF-Generator/blob/master/pdf-gen-demo.gif?raw=true)
