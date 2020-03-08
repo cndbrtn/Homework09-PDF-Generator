@@ -1,96 +1,73 @@
-// I hate this project so much node can suck a fart and so can all PDFs
-const fs = require("fs");
-const inquirer = require("inquirer");
-const axios = require("axios");
-const pdf = require("pdfkit");
+const fs = require('fs');
+const pdf = require('html-pdf');
+const inquirer = require('inquirer');
+const axios = require('axios');
+const HTML = require('./generateHTML');
 
-const doc = new pdf();
-
-
-inquirer
-  .prompt([
+inquirer.prompt([
     {
-      type: "input",
-      message: "Enter GitHub username",
-      name: "username"
+        type: 'input',
+        name: 'username',
+        message: 'Your GitHub username'
     },
     {
-      type: "list",
-      message: "Favorite color?",
-      name: "color",
-      choices: ["yellow", "green", "blue", "red", "pink", "grey"]
+        type: 'list',
+        name: 'color',
+        choices: ['green', 'blue', 'pink', 'red']
     }
-  ])
-  .then(function (response) {
-    // ++ error catch for github user input
-    if (response.username === "") {
-      console.log("Must enter a valid GitHub username.");
-      return;
-    }
-    const queryUrl = `https://api.github.com/users/${response.username}`;
-    let starArr = [];
-    const arrSum = arr => arr.reduce((a, b) => a + b, 0);
-    axios.get(queryUrl).then(res => {
+]).then(answer => {
+    const queryURL = `https://api.github.com/users/${answer.username}`
+    const queryStar = `https://api.github.com/users/${answer.username}/starred`
 
-      // axios.get(`https://api.github.com/users/${response.username}/starred`).then(resp => {console.log(resp)})
+    axios.get(queryURL).then(res => {
+        // console.log(res.data)
 
-      axios.get(`https://api.github.com/users/${response.username}/starred`).then(function (response) {
-        // console.log(response.data.length); 
-        // console.log(response.data[0]); 
-        for (let i = 0; i < response.data.length; i++) {
-          starArr.push(response.data[i].stargazers_count)
-        }
-        console.log(`sum is ${arrSum(starArr)}`);
-      })
-        .catch(function (err) {
-          console.log(err);
+        axios.get(queryStar).then(starRes => {
+            // console.log('starRes.data', starRes.data.stargazers_count)
+            const arr = [];
+            function stars(array) {
+                for (let i = 0; i < starRes.data.length; i++) {
+                    // console.log('i of starRes.data', starRes.data[i].stargazers_count)
+                    array.push(starRes.data[i].stargazers_count);
+                };
+                return arr;
+            }
+            // console.log('arr', arr)
+
+            
+            const arrSum = arr => arr.reduce((a, b) => a + b, 0);
+            // arrSum(arr);
+            const starCount = stars(arr);
+            
+
+            // console.log('stars', arrSum(starCount))
+
+            const profileData = {
+                bkgcolor: answer.color,
+                imgUrl: res.data.avatar_url,
+                name: res.data.name,
+                location: res.data.location,
+                profile: res.data.html_url,
+                blog: res.data.blog,
+                bio: res.data.bio,
+                repos: res.data.public_repos,
+                followers: res.data.followers,
+                stars: arrSum(starCount),
+                following: res.data.following,
+            };
+            
+            fs.writeFile('template.html', HTML(profileData), err => {
+                if (err) console.log(err);
+
+                const template = fs.readFileSync('./template.html', 'utf8');
+
+                pdf.create(template, { format: 'letter' }).toFile(`./${answer.username}_profile.pdf`, (err, res) => {
+                    if (err) return console.log(err);
+                    console.log(res);
+                });
+            });
+        }).catch(err => {
+            console.log(err)
         });
-
-      //axios call for stars 
-      console.log(res.data);
-      console.log(`starred url is: ${res.data.starred_url}`);
-      console.log(`img url is: ${res.data.avatar_url}`);
-      console.log(`!! color is ${response.color}`);
-      //make pdf
-      doc.pipe(fs.createWriteStream(`pdf/${response.username}_resume.pdf`));
-      //style
-      doc.rect(0, 0, 700, 300).fill("grey");
-      doc.rect(0, 300, 700, 500).fill("darkgrey");
-      doc.roundedRect(20, 80, 565, 280, 10).fill(`${response.color}`);
-      doc.roundedRect(20, 470, 260, 100, 10).fill(`${response.color}`);
-      doc.roundedRect(330, 470, 260, 100, 10).fill(`${response.color}`);
-      doc.roundedRect(20, 600, 260, 100, 10).fill(`${response.color}`);
-      doc.roundedRect(330, 600, 260, 100, 10).fill(`${response.color}`);
-      doc.circle(310, 110, 90).fill("black");
-      // doc.image(`${response.data.avatar_url}`, 215, 14, { width: 180 });
-      //content
-      doc.fontSize(22).text(`My name is ${res.data.name}!`, 50, 250, { align: 'center' }).fill("black");
-      doc.fontSize(14).text(`${res.data.location}`, -100, 310, { align: 'center' }).fill("black");
-      doc.fontSize(14).text(`GitHub`, 50, 310, { align: 'center' }).fill("black");
-      doc.underline(274, 313, 45, 10, { color: 'blue', align: 'center' })
-        .link(274, 313, 45, 20, `${res.data.html_url}`);
-      doc.fontSize(14).text(`Blog`, 190, 310, { align: 'center' }).fill("black");
-      doc.underline(350, 313, 30, 10, { color: 'blue', align: 'center' })
-        .link(350, 313, 35, 20, `${res.data.blog}`);
-      doc.fontSize(18).text(res.data.bio, 100, 375, {
-        width: 410,
-        align: 'center'
-      });
-      doc.fontSize(18).text(`Public repos: \n${res.data.public_repos}`, -220, 500, {
-        align: 'center'
-      });
-      doc.fontSize(18).text(`Stars: \n${arrSum(starArr)}`, -220, 630, {
-        align: 'center'
-      });
-      doc.fontSize(18).text(`Followers: \n${res.data.followers}`, 385, 500, {
-        align: 'center'
-      });
-      doc.fontSize(18).text(`Following: \n${res.data.following}`, 385, 630, {
-        align: 'center'
-      });
-
-      doc.end();
-    }).catch(function (err) {
-      console.log(err);
     });
-  });
+});

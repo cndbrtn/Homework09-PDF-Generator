@@ -1,0 +1,29 @@
+{
+  "name": "homework09",
+  "version": "1.0.0",
+  "description": "command line app for generating pdf profiles for github users",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "dependencies": {
+    "axios": "^0.19.1",
+    "html-pdf": "^2.2.0",
+    "inquirer": "^7.0.3",
+    "pdfkit": "^0.11.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cndbrtn/Homework09.git"
+  },
+  "author": "cndbrtn",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cndbrtn/Homework09/issues"
+  },
+  "homepage": "https://github.com/cndbrtn/Homework09#readme"
+}
